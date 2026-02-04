@@ -27,11 +27,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Dark mode elements
   const darkModeToggle = document.getElementById("dark-mode-toggle");
-  const darkModeIcon = darkModeToggle.querySelector(".dark-mode-icon");
-  const darkModeText = darkModeToggle.querySelector("span:last-child");
-
+  
   // Dark mode functionality
   function initializeDarkMode() {
+    if (!darkModeToggle) return; // Guard against missing element
+    
     // Check if dark mode preference is saved in localStorage
     const isDarkMode = localStorage.getItem("darkMode") === "true";
     if (isDarkMode) {
@@ -40,16 +40,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function enableDarkMode() {
+    if (!darkModeToggle) return; // Guard against missing element
+    
+    const darkModeIcon = darkModeToggle.querySelector(".dark-mode-icon");
+    const darkModeText = darkModeToggle.querySelector("span:last-child");
+    
     document.body.classList.add("dark-mode");
-    darkModeIcon.textContent = "☀️";
-    darkModeText.textContent = "Light";
+    if (darkModeIcon) darkModeIcon.textContent = "☀️";
+    if (darkModeText) darkModeText.textContent = "Light";
     localStorage.setItem("darkMode", "true");
   }
 
   function disableDarkMode() {
+    if (!darkModeToggle) return; // Guard against missing element
+    
+    const darkModeIcon = darkModeToggle.querySelector(".dark-mode-icon");
+    const darkModeText = darkModeToggle.querySelector("span:last-child");
+    
     document.body.classList.remove("dark-mode");
-    darkModeIcon.textContent = "🌙";
-    darkModeText.textContent = "Dark";
+    if (darkModeIcon) darkModeIcon.textContent = "🌙";
+    if (darkModeText) darkModeText.textContent = "Dark";
     localStorage.setItem("darkMode", "false");
   }
 
@@ -62,7 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Event listener for dark mode toggle
-  darkModeToggle.addEventListener("click", toggleDarkMode);
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener("click", toggleDarkMode);
+  }
 
   // Activity categories with corresponding colors
   const activityTypes = {
