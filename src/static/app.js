@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const categoryFilters = document.querySelectorAll(".category-filter");
   const dayFilters = document.querySelectorAll(".day-filter");
   const timeFilters = document.querySelectorAll(".time-filter");
+  const difficultyFilters = document.querySelectorAll(".difficulty-filter");
 
   // Authentication elements
   const loginButton = document.getElementById("login-button");
@@ -91,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
+  let currentDifficulty = "";
 
   // Authentication state
   let currentUser = null;
@@ -114,6 +116,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const activeTimeFilter = document.querySelector(".time-filter.active");
     if (activeTimeFilter) {
       currentTimeRange = activeTimeFilter.dataset.time;
+    }
+
+    // Initialize difficulty filter
+    const activeDifficultyFilter = document.querySelector(".difficulty-filter.active");
+    if (activeDifficultyFilter) {
+      currentDifficulty = activeDifficultyFilter.dataset.difficulty;
     }
   }
 
@@ -140,6 +148,22 @@ document.addEventListener("DOMContentLoaded", () => {
     // Update active class
     timeFilters.forEach((btn) => {
       if (btn.dataset.time === timeRange) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+
+    fetchActivities();
+  }
+
+  // Function to set difficulty filter
+  function setDifficultyFilter(difficulty) {
+    currentDifficulty = difficulty;
+
+    // Update active class
+    difficultyFilters.forEach((btn) => {
+      if (btn.dataset.difficulty === difficulty) {
         btn.classList.add("active");
       } else {
         btn.classList.remove("active");
@@ -443,6 +467,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Handle difficulty filter
+      if (currentDifficulty) {
+        queryParams.push(`difficulty=${encodeURIComponent(currentDifficulty)}`);
+      }
+
       const queryString =
         queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
       const response = await fetch(`/activities${queryString}`);
@@ -620,6 +649,11 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      <div class="social-sharing">
+        <button class="share-button" title="Share this activity">
+          <span>🔗 Share</span>
+        </button>
+      </div>
     `;
 
     // Add click handlers for delete buttons
@@ -637,6 +671,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add click handler for share button
+    const shareButton = activityCard.querySelector(".share-button");
+    shareButton.addEventListener("click", () => {
+      openShareModal(name, details.description, formattedSchedule);
+    });
 
     activitiesList.appendChild(activityCard);
   }
@@ -689,6 +729,13 @@ document.addEventListener("DOMContentLoaded", () => {
       // Update current time filter and fetch activities
       currentTimeRange = button.dataset.time;
       fetchActivities();
+    });
+  });
+
+  // Add event listeners for difficulty filter buttons
+  difficultyFilters.forEach((button) => {
+    button.addEventListener("click", () => {
+      setDifficultyFilter(button.dataset.difficulty);
     });
   });
 
@@ -910,7 +957,186 @@ document.addEventListener("DOMContentLoaded", () => {
   window.activityFilters = {
     setDayFilter,
     setTimeRangeFilter,
+    setDifficultyFilter,
   };
+
+  // Social sharing functions
+  let currentShareData = null;
+  
+  function openShareModal(activityName, description, schedule) {
+    // Create unique URL for this activity
+    const shareUrl = `${window.location.origin}${window.location.pathname}#activity=${encodeURIComponent(activityName)}`;
+    const shareText = `Check out ${activityName} at Mergington High School! ${description} - ${schedule}`;
+    
+    // Store current share data for event handlers
+    currentShareData = {
+      url: shareUrl,
+      text: shareText,
+      activityName: activityName,
+      description: description,
+      schedule: schedule
+    };
+    
+    // Create or get the share modal
+    let shareModal = document.getElementById("share-modal");
+    if (!shareModal) {
+      shareModal = document.createElement("div");
+      shareModal.id = "share-modal";
+      shareModal.className = "modal hidden";
+      shareModal.innerHTML = `
+        <div class="modal-content share-modal-content">
+          <span class="close-share-modal">&times;</span>
+          <h3>Share Activity</h3>
+          <p id="share-activity-name"></p>
+          <div class="share-buttons">
+            <button class="share-option-btn facebook-share" id="facebook-share">
+              <span class="share-icon">📘</span>
+              <span>Facebook</span>
+            </button>
+            <button class="share-option-btn twitter-share" id="twitter-share">
+              <span class="share-icon">🐦</span>
+              <span>Twitter</span>
+            </button>
+            <button class="share-option-btn email-share" id="email-share">
+              <span class="share-icon">✉️</span>
+              <span>Email</span>
+            </button>
+            <button class="share-option-btn copy-link" id="copy-link">
+              <span class="share-icon">📋</span>
+              <span>Copy Link</span>
+            </button>
+          </div>
+          <div id="share-message" class="hidden message"></div>
+        </div>
+      `;
+      document.body.appendChild(shareModal);
+      
+      // Add event listeners once
+      const closeShareModal = shareModal.querySelector(".close-share-modal");
+      closeShareModal.addEventListener("click", closeShareModalHandler);
+      
+      shareModal.addEventListener("click", (event) => {
+        if (event.target === shareModal) {
+          closeShareModalHandler();
+        }
+      });
+      
+      // Add share button listeners once, using currentShareData
+      document.getElementById("facebook-share").addEventListener("click", () => {
+        shareToFacebook(currentShareData.url, currentShareData.text);
+      });
+      
+      document.getElementById("twitter-share").addEventListener("click", () => {
+        shareToTwitter(currentShareData.url, currentShareData.text);
+      });
+      
+      document.getElementById("email-share").addEventListener("click", () => {
+        shareViaEmail(currentShareData.activityName, currentShareData.description, currentShareData.schedule, currentShareData.url);
+      });
+      
+      document.getElementById("copy-link").addEventListener("click", () => {
+        copyLinkToClipboard(currentShareData.url);
+      });
+    }
+    
+    // Update content
+    document.getElementById("share-activity-name").textContent = activityName;
+    
+    // Show modal
+    shareModal.classList.remove("hidden");
+    setTimeout(() => {
+      shareModal.classList.add("show");
+    }, 10);
+  }
+  
+  function closeShareModalHandler() {
+    const shareModal = document.getElementById("share-modal");
+    if (shareModal) {
+      shareModal.classList.remove("show");
+      setTimeout(() => {
+        shareModal.classList.add("hidden");
+        const shareMessage = document.getElementById("share-message");
+        if (shareMessage) {
+          shareMessage.classList.add("hidden");
+        }
+      }, 300);
+    }
+  }
+  
+  function shareToFacebook(url, text) {
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(facebookUrl, '_blank', 'width=600,height=400');
+  }
+  
+  function shareToTwitter(url, text) {
+    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    window.open(twitterUrl, '_blank', 'width=600,height=400');
+  }
+  
+  function shareViaEmail(activityName, description, schedule, url) {
+    const subject = encodeURIComponent(`Check out ${activityName} at Mergington High School`);
+    const body = encodeURIComponent(
+      `Hi!\n\nI wanted to share this exciting activity with you:\n\n` +
+      `${activityName}\n${description}\n\n` +
+      `Schedule: ${schedule}\n\n` +
+      `Learn more: ${url}\n\n` +
+      `Best regards`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
+  
+  function copyLinkToClipboard(url) {
+    // Try modern Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        showShareMessage("Link copied to clipboard!", "success");
+      }).catch((err) => {
+        console.error("Clipboard API failed:", err);
+        fallbackCopyToClipboard(url);
+      });
+    } else {
+      // Fallback for older browsers
+      fallbackCopyToClipboard(url);
+    }
+  }
+  
+  function fallbackCopyToClipboard(url) {
+    // Create a temporary input element
+    const tempInput = document.createElement("input");
+    tempInput.value = url;
+    tempInput.style.position = "absolute";
+    tempInput.style.left = "-9999px";
+    document.body.appendChild(tempInput);
+    
+    // Select and copy
+    tempInput.select();
+    tempInput.setSelectionRange(0, tempInput.value.length); // Select entire URL
+    
+    try {
+      const successful = document.execCommand("copy");
+      if (successful) {
+        showShareMessage("Link copied to clipboard!", "success");
+      } else {
+        showShareMessage("Please copy this link: " + url, "info");
+      }
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+      showShareMessage("Please copy this link: " + url, "info");
+    } finally {
+      document.body.removeChild(tempInput);
+    }
+  }
+  
+  function showShareMessage(text, type) {
+    const shareMessage = document.getElementById("share-message");
+    shareMessage.textContent = text;
+    shareMessage.className = `message ${type}`;
+    shareMessage.classList.remove("hidden");
+    
+    setTimeout(() => {
+      shareMessage.classList.add("hidden");
+    }, 3000);
+  }
 
   // Initialize app
   initializeDarkMode();
