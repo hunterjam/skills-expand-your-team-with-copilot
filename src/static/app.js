@@ -26,6 +26,57 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
 
+  // Dark mode elements
+  const darkModeToggle = document.getElementById("dark-mode-toggle");
+  
+  // Dark mode functionality
+  function initializeDarkMode() {
+    if (!darkModeToggle) return; // Guard against missing element
+    
+    // Check if dark mode preference is saved in localStorage
+    const isDarkMode = localStorage.getItem("darkMode") === "true";
+    if (isDarkMode) {
+      enableDarkMode();
+    }
+  }
+
+  function enableDarkMode() {
+    if (!darkModeToggle) return; // Guard against missing element
+    
+    const darkModeIcon = darkModeToggle.querySelector(".dark-mode-icon");
+    const darkModeText = darkModeToggle.querySelector(".dark-mode-text");
+    
+    document.body.classList.add("dark-mode");
+    if (darkModeIcon) darkModeIcon.textContent = "☀️";
+    if (darkModeText) darkModeText.textContent = "Light";
+    localStorage.setItem("darkMode", "true");
+  }
+
+  function disableDarkMode() {
+    if (!darkModeToggle) return; // Guard against missing element
+    
+    const darkModeIcon = darkModeToggle.querySelector(".dark-mode-icon");
+    const darkModeText = darkModeToggle.querySelector(".dark-mode-text");
+    
+    document.body.classList.remove("dark-mode");
+    if (darkModeIcon) darkModeIcon.textContent = "🌙";
+    if (darkModeText) darkModeText.textContent = "Dark";
+    localStorage.setItem("darkMode", "false");
+  }
+
+  function toggleDarkMode() {
+    if (document.body.classList.contains("dark-mode")) {
+      disableDarkMode();
+    } else {
+      enableDarkMode();
+    }
+  }
+
+  // Event listener for dark mode toggle
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener("click", toggleDarkMode);
+  }
+
   // Activity categories with corresponding colors
   const activityTypes = {
     sports: { label: "Sports", color: "#e8f5e9", textColor: "#2e7d32" },
@@ -1088,6 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Initialize app
+  initializeDarkMode();
   checkAuthentication();
   initializeFilters();
   fetchActivities();
