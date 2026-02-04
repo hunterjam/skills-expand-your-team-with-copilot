@@ -570,7 +570,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       </div>
       <div class="social-sharing">
-        <button class="share-button" data-activity="${name}" data-description="${details.description.replace(/"/g, '&quot;')}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}" title="Share this activity">
+        <button class="share-button" title="Share this activity">
           <span>🔗 Share</span>
         </button>
       </div>
@@ -594,11 +594,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Add click handler for share button
     const shareButton = activityCard.querySelector(".share-button");
-    shareButton.addEventListener("click", (event) => {
-      const activityName = event.currentTarget.dataset.activity;
-      const description = event.currentTarget.dataset.description;
-      const schedule = event.currentTarget.dataset.schedule;
-      openShareModal(activityName, description, schedule);
+    shareButton.addEventListener("click", () => {
+      openShareModal(name, details.description, formattedSchedule);
     });
 
     activitiesList.appendChild(activityCard);
@@ -1025,7 +1022,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Select and copy
     tempInput.select();
-    tempInput.setSelectionRange(0, 99999); // For mobile devices
+    tempInput.setSelectionRange(0, tempInput.value.length); // Select entire URL
     
     try {
       const successful = document.execCommand("copy");
