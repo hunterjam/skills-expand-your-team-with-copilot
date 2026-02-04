@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!darkModeToggle) return; // Guard against missing element
     
     const darkModeIcon = darkModeToggle.querySelector(".dark-mode-icon");
-    const darkModeText = darkModeToggle.querySelector("span:last-child");
+    const darkModeText = darkModeToggle.querySelector(".dark-mode-text");
     
     document.body.classList.add("dark-mode");
     if (darkModeIcon) darkModeIcon.textContent = "☀️";
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!darkModeToggle) return; // Guard against missing element
     
     const darkModeIcon = darkModeToggle.querySelector(".dark-mode-icon");
-    const darkModeText = darkModeToggle.querySelector("span:last-child");
+    const darkModeText = darkModeToggle.querySelector(".dark-mode-text");
     
     document.body.classList.remove("dark-mode");
     if (darkModeIcon) darkModeIcon.textContent = "🌙";
