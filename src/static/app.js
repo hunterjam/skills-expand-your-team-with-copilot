@@ -876,9 +876,21 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Social sharing functions
+  let currentShareData = null;
+  
   function openShareModal(activityName, description, schedule) {
-    const shareUrl = window.location.origin + window.location.pathname;
+    // Create unique URL for this activity
+    const shareUrl = `${window.location.origin}${window.location.pathname}#activity=${encodeURIComponent(activityName)}`;
     const shareText = `Check out ${activityName} at Mergington High School! ${description} - ${schedule}`;
+    
+    // Store current share data for event handlers
+    currentShareData = {
+      url: shareUrl,
+      text: shareText,
+      activityName: activityName,
+      description: description,
+      schedule: schedule
+    };
     
     // Create or get the share modal
     let shareModal = document.getElementById("share-modal");
@@ -914,7 +926,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       document.body.appendChild(shareModal);
       
-      // Add event listeners
+      // Add event listeners once
       const closeShareModal = shareModal.querySelector(".close-share-modal");
       closeShareModal.addEventListener("click", closeShareModalHandler);
       
@@ -923,33 +935,27 @@ document.addEventListener("DOMContentLoaded", () => {
           closeShareModalHandler();
         }
       });
+      
+      // Add share button listeners once, using currentShareData
+      document.getElementById("facebook-share").addEventListener("click", () => {
+        shareToFacebook(currentShareData.url, currentShareData.text);
+      });
+      
+      document.getElementById("twitter-share").addEventListener("click", () => {
+        shareToTwitter(currentShareData.url, currentShareData.text);
+      });
+      
+      document.getElementById("email-share").addEventListener("click", () => {
+        shareViaEmail(currentShareData.activityName, currentShareData.description, currentShareData.schedule, currentShareData.url);
+      });
+      
+      document.getElementById("copy-link").addEventListener("click", () => {
+        copyLinkToClipboard(currentShareData.url);
+      });
     }
     
     // Update content
     document.getElementById("share-activity-name").textContent = activityName;
-    
-    // Update button handlers
-    const facebookBtn = document.getElementById("facebook-share");
-    const twitterBtn = document.getElementById("twitter-share");
-    const emailBtn = document.getElementById("email-share");
-    const copyLinkBtn = document.getElementById("copy-link");
-    
-    // Remove old listeners by cloning
-    const newFacebookBtn = facebookBtn.cloneNode(true);
-    const newTwitterBtn = twitterBtn.cloneNode(true);
-    const newEmailBtn = emailBtn.cloneNode(true);
-    const newCopyLinkBtn = copyLinkBtn.cloneNode(true);
-    
-    facebookBtn.parentNode.replaceChild(newFacebookBtn, facebookBtn);
-    twitterBtn.parentNode.replaceChild(newTwitterBtn, twitterBtn);
-    emailBtn.parentNode.replaceChild(newEmailBtn, emailBtn);
-    copyLinkBtn.parentNode.replaceChild(newCopyLinkBtn, copyLinkBtn);
-    
-    // Add new listeners
-    newFacebookBtn.addEventListener("click", () => shareToFacebook(shareUrl, shareText));
-    newTwitterBtn.addEventListener("click", () => shareToTwitter(shareUrl, shareText));
-    newEmailBtn.addEventListener("click", () => shareViaEmail(activityName, description, schedule, shareUrl));
-    newCopyLinkBtn.addEventListener("click", () => copyLinkToClipboard(shareUrl));
     
     // Show modal
     shareModal.classList.remove("hidden");
@@ -995,25 +1001,56 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   function copyLinkToClipboard(url) {
-    navigator.clipboard.writeText(url).then(() => {
-      const shareMessage = document.getElementById("share-message");
-      shareMessage.textContent = "Link copied to clipboard!";
-      shareMessage.className = "message success";
-      shareMessage.classList.remove("hidden");
-      
-      setTimeout(() => {
-        shareMessage.classList.add("hidden");
-      }, 3000);
-    }).catch((err) => {
-      const shareMessage = document.getElementById("share-message");
-      shareMessage.textContent = "Failed to copy link";
-      shareMessage.className = "message error";
-      shareMessage.classList.remove("hidden");
-      
-      setTimeout(() => {
-        shareMessage.classList.add("hidden");
-      }, 3000);
-    });
+    // Try modern Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        showShareMessage("Link copied to clipboard!", "success");
+      }).catch((err) => {
+        console.error("Clipboard API failed:", err);
+        fallbackCopyToClipboard(url);
+      });
+    } else {
+      // Fallback for older browsers
+      fallbackCopyToClipboard(url);
+    }
+  }
+  
+  function fallbackCopyToClipboard(url) {
+    // Create a temporary input element
+    const tempInput = document.createElement("input");
+    tempInput.value = url;
+    tempInput.style.position = "absolute";
+    tempInput.style.left = "-9999px";
+    document.body.appendChild(tempInput);
+    
+    // Select and copy
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+      const successful = document.execCommand("copy");
+      if (successful) {
+        showShareMessage("Link copied to clipboard!", "success");
+      } else {
+        showShareMessage("Please copy this link: " + url, "info");
+      }
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+      showShareMessage("Please copy this link: " + url, "info");
+    } finally {
+      document.body.removeChild(tempInput);
+    }
+  }
+  
+  function showShareMessage(text, type) {
+    const shareMessage = document.getElementById("share-message");
+    shareMessage.textContent = text;
+    shareMessage.className = `message ${type}`;
+    shareMessage.classList.remove("hidden");
+    
+    setTimeout(() => {
+      shareMessage.classList.add("hidden");
+    }, 3000);
   }
 
   // Initialize app
